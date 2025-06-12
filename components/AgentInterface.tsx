@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -25,8 +25,6 @@ import {
 } from 'lucide-react-native';
 import { useAgent } from '@/hooks/useAgent';
 import { GenerationRequest, PreviewConfig } from '@/types/agent';
-import { useTheme } from '@/context/ThemeContext';
-import Toast from 'react-native-toast-message';
 
 export default function AgentInterface() {
   const {
@@ -45,8 +43,6 @@ export default function AgentInterface() {
     getPreviewStatus,
     clearError,
   } = useAgent();
-  const { theme } = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [apiKey, setApiKey] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
@@ -61,8 +57,7 @@ export default function AgentInterface() {
 
   useEffect(() => {
     if (error) {
-      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: error });
-      clearError();
+      Alert.alert('Error', error, [{ text: 'OK', onPress: clearError }]);
     }
   }, [error, clearError]);
 
@@ -77,7 +72,7 @@ export default function AgentInterface() {
 
   const handleSetupAgent = () => {
     if (!apiKey.trim()) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Please enter your API key' });
+      Alert.alert('Error', 'Please enter your API key');
       return;
     }
     
@@ -87,7 +82,7 @@ export default function AgentInterface() {
 
   const handleGenerateProject = async () => {
     if (!projectDescription.trim()) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Please enter a project description' });
+      Alert.alert('Error', 'Please enter a project description');
       return;
     }
 
@@ -110,7 +105,7 @@ export default function AgentInterface() {
 
   const handleStartPreview = async (mode: 'web' | 'game') => {
     if (!currentProject) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No project loaded' });
+      Alert.alert('Error', 'No project loaded');
       return;
     }
 
@@ -388,12 +383,10 @@ export default function AgentInterface() {
   );
 }
 
-import type { Theme } from '@/constants/theme';
-
-const createStyles = (theme: Theme) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#0f0f0f',
   },
   content: {
     flex: 1,
@@ -405,41 +398,41 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 32,
   },
   setupTitle: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 28,
     fontWeight: '700',
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
+    marginTop: 24,
+    marginBottom: 8,
   },
   setupDescription: {
-    color: theme.colors.muted,
+    color: '#9ca3af',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 32,
     lineHeight: 24,
   },
   apiKeyInput: {
     width: '100%',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    color: theme.colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: '#fff',
     fontSize: 16,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#2a2a2a',
   },
   setupButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: 12,
   },
   setupButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -451,7 +444,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#2a2a2a',
   },
   headerInfo: {
     flexDirection: 'row',
@@ -461,27 +454,27 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     marginLeft: 12,
   },
   headerTitle: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 18,
     fontWeight: '700',
   },
   headerSubtitle: {
-    color: theme.colors.success,
+    color: '#10B981',
     fontSize: 14,
     marginTop: 2,
   },
   settingsButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
   },
   progressContainer: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     margin: 20,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#2a2a2a',
   },
   progressHeader: {
     flexDirection: 'row',
@@ -490,47 +483,47 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 8,
   },
   progressPhase: {
-    color: theme.colors.primary,
+    color: '#3B82F6',
     fontSize: 16,
     fontWeight: '600',
   },
   progressPercentage: {
-    color: theme.colors.muted,
+    color: '#9ca3af',
     fontSize: 14,
     fontWeight: '500',
   },
   progressBar: {
     height: 4,
-    backgroundColor: theme.colors.border,
+    backgroundColor: '#2a2a2a',
     borderRadius: 2,
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#3B82F6',
     borderRadius: 2,
   },
   progressMessage: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 14,
     marginBottom: 4,
   },
   currentFile: {
-    color: theme.colors.muted,
+    color: '#9ca3af',
     fontSize: 12,
     fontStyle: 'italic',
   },
   section: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#2a2a2a',
   },
   sectionTitle: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
   },
   typeSelector: {
     flexDirection: 'row',
@@ -538,23 +531,23 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     marginRight: 8,
     alignItems: 'center',
   },
   activeTypeButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#3B82F6',
   },
   typeButtonText: {
-    color: theme.colors.muted,
+    color: '#9ca3af',
     fontSize: 14,
     fontWeight: '500',
   },
   activeTypeButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
   },
   frameworkSelector: {
     flexDirection: 'row',
@@ -562,49 +555,49 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   },
   frameworkButton: {
     flex: 1,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#1a1a1a',
     borderRadius: 6,
     marginRight: 6,
     alignItems: 'center',
   },
   activeFrameworkButton: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: '#8B5CF6',
   },
   frameworkButtonText: {
-    color: theme.colors.muted,
+    color: '#9ca3af',
     fontSize: 12,
     fontWeight: '500',
   },
   activeFrameworkButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
   },
   descriptionInput: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    color: theme.colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: '#fff',
     fontSize: 16,
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#2a2a2a',
     textAlignVertical: 'top',
   },
   generateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.md,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
     borderRadius: 12,
   },
   disabledButton: {
-    backgroundColor: theme.colors.border,
+    backgroundColor: '#374151',
   },
   generateButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -618,13 +611,13 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.success,
-    paddingVertical: theme.spacing.sm,
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
     borderRadius: 8,
     marginRight: 8,
   },
   previewButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
@@ -632,12 +625,12 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   previewStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     padding: 12,
     borderRadius: 8,
   },
   previewStatusText: {
-    color: theme.colors.success,
+    color: '#10B981',
     fontSize: 12,
     marginLeft: 8,
     flex: 1,
@@ -645,7 +638,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   projectItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
@@ -656,7 +649,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
   },
   projectName: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 12,
@@ -665,7 +658,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   activeIndicator: {
     width: 8,
     height: 8,
-    backgroundColor: theme.colors.success,
+    backgroundColor: '#10B981',
     borderRadius: 4,
     marginLeft: 8,
   },
@@ -673,7 +666,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     padding: 8,
   },
   emptyText: {
-    color: theme.colors.muted,
+    color: '#6b7280',
     fontSize: 14,
     textAlign: 'center',
     fontStyle: 'italic',
