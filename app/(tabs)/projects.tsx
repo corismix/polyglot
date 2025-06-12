@@ -173,7 +173,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   title: {
-    color: theme.colors.text,
+    color: '#ffffff',
     fontSize: 24,
     fontWeight: '700',
   },
