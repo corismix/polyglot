@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,44 @@ import {
   Animated,
 } from 'react-native';
 import { FileText, FolderOpen, ChevronDown, ChevronRight, PanelLeftClose, PanelLeft } from 'lucide-react-native';
+import { useAgent } from '@/hooks/useAgent';
+import { useTheme } from '@/context/ThemeContext';
 
 interface FileNode {
   name: string;
   type: 'file' | 'folder';
   children?: FileNode[];
   content?: string;
+  path?: string;
+}
+
+function buildFileTree(entries: { path: string; type: 'file' | 'directory' }[]): FileNode[] {
+  const root: FileNode[] = [];
+  const map: Record<string, FileNode> = {};
+
+  for (const entry of entries) {
+    const parts = entry.path.split('/');
+    let current = root;
+    let cumulative = '';
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      cumulative += (i === 0 ? '' : '/') + part;
+      if (i === parts.length - 1) {
+        const node: FileNode = { name: part, type: entry.type === 'directory' ? 'folder' : 'file', path: entry.path };
+        current.push(node);
+        map[cumulative] = node;
+      } else {
+        if (!map[cumulative]) {
+          const folder: FileNode = { name: part, type: 'folder', children: [], path: cumulative };
+          current.push(folder);
+          map[cumulative] = folder;
+        }
+        current = map[cumulative].children!;
+      }
+    }
+  }
+
+  return root;
 }
 
 export default function CodeEditor() {
@@ -42,38 +74,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });`);
-
-  const [expandedFolders, setExpandedFolders] = useState<string[]>(['src', 'components']);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
   const [isExplorerVisible, setIsExplorerVisible] = useState(true);
+  const [fileTree, setFileTree] = useState<FileNode[]>([]);
 
-  const fileTree: FileNode[] = [
-    {
-      name: 'src',
-      type: 'folder',
-      children: [
-        { name: 'App.tsx', type: 'file' },
-        { name: 'index.tsx', type: 'file' },
-        {
-          name: 'components',
-          type: 'folder',
-          children: [
-            { name: 'Button.tsx', type: 'file' },
-            { name: 'Header.tsx', type: 'file' },
-          ],
-        },
-        {
-          name: 'screens',
-          type: 'folder',
-          children: [
-            { name: 'HomeScreen.tsx', type: 'file' },
-            { name: 'ProfileScreen.tsx', type: 'file' },
-          ],
-        },
-      ],
-    },
-    { name: 'package.json', type: 'file' },
-    { name: 'README.md', type: 'file' },
-  ];
+  const { listFiles, readFile, currentProject } = useAgent();
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  useEffect(() => {
+    if (!currentProject) {
+      setFileTree([]);
+      return;
+    }
+    listFiles()
+      .then(entries => setFileTree(buildFileTree(entries)))
+      .catch(() => {});
+  }, [currentProject]);
 
   const toggleFolder = (folderName: string) => {
     setExpandedFolders(prev =>
@@ -92,11 +109,16 @@ const styles = StyleSheet.create({
       <View key={index}>
         <TouchableOpacity
           style={[styles.fileItem, { paddingLeft: 12 + depth * 16 }]}
-          onPress={() =>
-            node.type === 'folder'
-              ? toggleFolder(node.name)
-              : setSelectedFile(node.name)
-          }
+          onPress={() => {
+            if (node.type === 'folder') {
+              toggleFolder(node.name);
+            } else {
+              setSelectedFile(node.name);
+              if (node.path) {
+                readFile(node.path).then(setCode).catch(() => {});
+              }
+            }
+          }}
         >
           {node.type === 'folder' ? (
             expandedFolders.includes(node.name) ? (
@@ -168,7 +190,7 @@ const styles = StyleSheet.create({
             multiline
             textAlignVertical="top"
             placeholder="Start coding..."
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={theme.colors.muted}
           />
         </ScrollView>
       </View>
@@ -176,17 +198,19 @@ const styles = StyleSheet.create({
   );
 }
 
-const styles = StyleSheet.create({
+import type { Theme } from '@/constants/theme';
+
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#0f0f0f',
+    backgroundColor: theme.colors.background,
   },
   sidebar: {
     width: 250,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.surface,
     borderRightWidth: 1,
-    borderRightColor: '#2a2a2a',
+    borderRightColor: theme.colors.border,
   },
   sidebarHeader: {
     flexDirection: 'row',
@@ -195,17 +219,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: theme.colors.border,
   },
   sidebarTitle: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 14,
     fontWeight: '600',
   },
   toggleButton: {
     padding: 6,
     borderRadius: 4,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.border,
   },
   fileTree: {
     flex: 1,
@@ -217,35 +241,35 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   fileName: {
-    color: '#9ca3af',
+    color: theme.colors.muted,
     fontSize: 14,
     marginLeft: 8,
   },
   selectedFileName: {
-    color: '#3B82F6',
+    color: theme.colors.primary,
     fontWeight: '500',
   },
   editor: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: theme.colors.background,
   },
   editorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: theme.colors.border,
   },
   showExplorerButton: {
     padding: 6,
     borderRadius: 4,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.colors.border,
     marginRight: 12,
   },
   editorTitle: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -254,7 +278,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   codeInput: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 14,
     fontFamily: 'monospace',
     lineHeight: 20,
