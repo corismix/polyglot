@@ -15,7 +15,6 @@ export class FileSystemService {
   private static instance: FileSystemService;
   private readonly baseDirectory: string;
   private webFileSystem: WebFileSystem = {};
-  private saveTimeout?: ReturnType<typeof setTimeout>;
 
   private constructor() {
     if (Platform.OS === 'web') {
@@ -53,11 +52,6 @@ export class FileSystemService {
     }
   }
 
-  private scheduleSaveWebFileSystem(): void {
-    if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(() => this.saveWebFileSystem(), 1000);
-  }
-
   private normalizeWebPath(path: string): string {
     return path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
   }
@@ -88,7 +82,7 @@ export class FileSystemService {
         };
       }
 
-      this.scheduleSaveWebFileSystem();
+      this.saveWebFileSystem();
       return projectPath;
     }
 
@@ -138,7 +132,7 @@ export class FileSystemService {
         size: content.length,
       };
       
-      this.scheduleSaveWebFileSystem();
+      this.saveWebFileSystem();
       return;
     }
 
@@ -250,7 +244,7 @@ export class FileSystemService {
         delete this.webFileSystem[key];
       });
       
-      this.scheduleSaveWebFileSystem();
+      this.saveWebFileSystem();
       return;
     }
 
@@ -297,7 +291,7 @@ export class FileSystemService {
         size: sourceFile.size,
       };
       
-      this.scheduleSaveWebFileSystem();
+      this.saveWebFileSystem();
       return;
     }
 
@@ -408,7 +402,7 @@ export class FileSystemService {
           modificationTime: Date.now(),
           size: 0,
         };
-        this.scheduleSaveWebFileSystem();
+        this.saveWebFileSystem();
       }
       return;
     }

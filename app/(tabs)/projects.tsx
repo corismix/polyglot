@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Search, FolderOpen, Smartphone, Monitor, Clock, MoveVertical as MoreVertical, Star } from 'lucide-react-native';
-import { useTheme } from '@/context/ThemeContext';
 
 interface Project {
   id: string;
@@ -22,8 +21,6 @@ interface Project {
 }
 
 export default function ProjectsScreen() {
-  const { theme } = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState<Project[]>([
     {
@@ -156,12 +153,10 @@ export default function ProjectsScreen() {
   );
 }
 
-import type { Theme } from '@/constants/theme';
-
-const createStyles = (theme: Theme) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#0f0f0f',
   },
   header: {
     flexDirection: 'row',
@@ -170,15 +165,15 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#2a2a2a',
   },
   title: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 24,
     fontWeight: '700',
   },
   newProjectButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#3B82F6',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -186,7 +181,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 8,
   },
   newProjectButtonText: {
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
@@ -194,7 +189,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     marginHorizontal: 20,
     marginVertical: 16,
@@ -203,7 +198,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: theme.colors.text,
+    color: '#fff',
     fontSize: 16,
     marginLeft: 12,
   },
