@@ -1,8 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
-import { AgentCore } from '@/services/AgentCore';
-import { PreviewEngine } from '@/services/PreviewEngine';
-import { FileSystemService } from '@/services/FileSystemService';
+import { useState, useCallback } from 'react';
+import { useServices } from '@/context/ServicesContext';
 import { AgentProgress, GenerationRequest, PreviewConfig } from '@/types/agent';
+import Toast from 'react-native-toast-message';
 
 export function useAgent() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -11,15 +10,15 @@ export function useAgent() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const agentCore = useRef(AgentCore.getInstance());
-  const previewEngine = useRef(PreviewEngine.getInstance());
-  const fileSystemService = useRef(FileSystemService.getInstance());
+  const { agentCore, previewEngine, fileSystemService } = useServices();
 
   // Set up progress callback
   const handleProgress = useCallback((progress: AgentProgress) => {
     setProgress(progress);
     if (progress.phase === 'error') {
-      setError(progress.error || 'Unknown error occurred');
+      const msg = progress.error || 'Unknown error occurred';
+      setError(msg);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: msg });
       setIsGenerating(false);
     } else if (progress.phase === 'complete') {
       setIsGenerating(false);
@@ -28,8 +27,8 @@ export function useAgent() {
 
   // Initialize agent with progress callback
   const initializeAgent = useCallback((apiKey: string) => {
-    agentCore.current.setApiKey(apiKey);
-    agentCore.current.setProgressCallback(handleProgress);
+    agentCore.setApiKey(apiKey);
+    agentCore.setProgressCallback(handleProgress);
     setError(null);
   }, [handleProgress]);
 
@@ -40,13 +39,14 @@ export function useAgent() {
       setError(null);
       setProgress(null);
 
-      const projectPath = await agentCore.current.generateProject(request);
+      const projectPath = await agentCore.generateProject(request);
       setCurrentProject(projectPath);
       
       return projectPath;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Project generation failed';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       setIsGenerating(false);
       throw new Error(errorMessage);
     }
@@ -59,12 +59,13 @@ export function useAgent() {
     }
 
     try {
-      const url = await previewEngine.current.startPreview(currentProject, config);
+      const url = await previewEngine.startPreview(currentProject, config);
       setPreviewUrl(url);
       return url;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Preview failed to start';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject]);
@@ -72,7 +73,7 @@ export function useAgent() {
   // Stop current preview
   const stopPreview = useCallback(async () => {
     try {
-      await previewEngine.current.stopPreview();
+      await previewEngine.stopPreview();
       setPreviewUrl(null);
     } catch (error) {
       console.warn('Failed to stop preview:', error);
@@ -86,16 +87,17 @@ export function useAgent() {
     }
 
     try {
-      await fileSystemService.current.writeFile(currentProject, filePath, content);
+      await fileSystemService.writeFile(currentProject, filePath, content);
       
       // Update preview if active
-      const previewStatus = previewEngine.current.getPreviewStatus();
+      const previewStatus = previewEngine.getPreviewStatus();
       if (previewStatus.isActive) {
-        await previewEngine.current.updatePreview(filePath, content);
+        await previewEngine.updatePreview(filePath, content);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update file';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject]);
@@ -107,10 +109,11 @@ export function useAgent() {
     }
 
     try {
-      return await fileSystemService.current.readFile(currentProject, filePath);
+      return await fileSystemService.readFile(currentProject, filePath);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to read file';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject]);
@@ -122,10 +125,11 @@ export function useAgent() {
     }
 
     try {
-      return await fileSystemService.current.listFiles(currentProject);
+      return await fileSystemService.listFiles(currentProject);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to list files';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject]);
@@ -133,7 +137,7 @@ export function useAgent() {
   // Load existing project
   const loadProject = useCallback(async (projectName: string) => {
     try {
-      const projectInfo = await fileSystemService.current.getProjectInfo(projectName);
+      const projectInfo = await fileSystemService.getProjectInfo(projectName);
       if (!projectInfo) {
         throw new Error('Project not found');
       }
@@ -144,6 +148,7 @@ export function useAgent() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load project';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, []);
@@ -151,10 +156,11 @@ export function useAgent() {
   // List all projects
   const listProjects = useCallback(async () => {
     try {
-      return await fileSystemService.current.listProjects();
+      return await fileSystemService.listProjects();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to list projects';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, []);
@@ -162,7 +168,7 @@ export function useAgent() {
   // Delete project
   const deleteProject = useCallback(async (projectName: string) => {
     try {
-      await fileSystemService.current.deleteProject(projectName);
+      await fileSystemService.deleteProject(projectName);
       
       // If this was the current project, clear it
       if (currentProject?.includes(projectName)) {
@@ -172,13 +178,14 @@ export function useAgent() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete project';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject, stopPreview]);
 
   // Get preview status
   const getPreviewStatus = useCallback(() => {
-    return previewEngine.current.getPreviewStatus();
+    return previewEngine.getPreviewStatus();
   }, []);
 
   // Validate project for preview
@@ -188,10 +195,11 @@ export function useAgent() {
     }
 
     try {
-      return await previewEngine.current.validateProjectForPreview(currentProject);
+      return await previewEngine.validateProjectForPreview(currentProject);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Validation failed';
       setError(errorMessage);
+      Toast.show({ type: 'error', text1: 'An Error Occurred', text2: errorMessage });
       throw new Error(errorMessage);
     }
   }, [currentProject]);
