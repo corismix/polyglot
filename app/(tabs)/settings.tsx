@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Key, Palette, Code, Download, Shield, CircleHelp as HelpCircle, ChevronRight, Eye, EyeOff } from 'lucide-react-native';
+import * as SecureStore from 'expo-secure-store';
+import { useTheme } from '@/context/ThemeContext';
+import { darkTheme } from '@/constants/theme';
+import Toast from 'react-native-toast-message';
 
 export default function SettingsScreen() {
   const [apiKeys, setApiKeys] = useState({
@@ -23,12 +27,24 @@ export default function SettingsScreen() {
     claude: false,
     gemini: false,
   });
-  const [darkMode, setDarkMode] = useState(true);
+  const { theme, toggleTheme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const darkMode = theme === darkTheme;
   const [autoSave, setAutoSave] = useState(true);
   const [codeCompletion, setCodeCompletion] = useState(true);
 
+  useEffect(() => {
+    (async () => {
+      const openai = await SecureStore.getItemAsync('openai_api_key');
+      const claude = await SecureStore.getItemAsync('claude_api_key');
+      const gemini = await SecureStore.getItemAsync('gemini_api_key');
+      setApiKeys({ openai: openai || '', claude: claude || '', gemini: gemini || '' });
+    })();
+  }, []);
+
   const handleApiKeyChange = (provider: keyof typeof apiKeys, value: string) => {
     setApiKeys(prev => ({ ...prev, [provider]: value }));
+    SecureStore.setItemAsync(`${provider}_api_key`, value);
   };
 
   const toggleApiKeyVisibility = (provider: keyof typeof showApiKeys) => {
@@ -36,7 +52,7 @@ export default function SettingsScreen() {
   };
 
   const saveApiKeys = () => {
-    Alert.alert('Success', 'API keys have been saved securely');
+    Toast.show({ type: 'success', text1: 'Saved', text2: 'API keys have been saved' });
   };
 
   const clearData = () => {
@@ -111,9 +127,9 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: '#374151', true: '#3B82F6' }}
-              thumbColor="#fff"
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={theme.colors.text}
             />
           </View>
 
@@ -125,8 +141,8 @@ export default function SettingsScreen() {
             <Switch
               value={autoSave}
               onValueChange={setAutoSave}
-              trackColor={{ false: '#374151', true: '#3B82F6' }}
-              thumbColor="#fff"
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={theme.colors.text}
             />
           </View>
 
@@ -138,8 +154,8 @@ export default function SettingsScreen() {
             <Switch
               value={codeCompletion}
               onValueChange={setCodeCompletion}
-              trackColor={{ false: '#374151', true: '#3B82F6' }}
-              thumbColor="#fff"
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={theme.colors.text}
             />
           </View>
         </View>
@@ -203,10 +219,12 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+import type { Theme } from '@/constants/theme';
+
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -215,10 +233,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: theme.colors.border,
   },
   title: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 24,
     fontWeight: '700',
   },

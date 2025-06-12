@@ -124,7 +124,7 @@ export class AgentCore {
             message: `Generating ${file.path}...`,
           });
 
-          const content = await this.generateFileContent(file, structure, completedFiles);
+          const content = await this.generateFileContent(projectPath, file, structure, completedFiles);
           await this.fileSystemService.writeFile(projectPath, file.path, content);
           completedFiles.push(file.path);
 
@@ -192,11 +192,21 @@ export class AgentCore {
    * Generates content for a specific file
    */
   private async generateFileContent(
+    projectPath: string,
     file: FileStructure,
     structure: ProjectStructure,
     completedFiles: string[]
   ): Promise<string> {
-    const prompt = this.createFileGenerationPrompt(file, structure, completedFiles);
+    const dependencyContents: Record<string, string> = {};
+    if (file.dependencies) {
+      for (const dep of file.dependencies) {
+        try {
+          dependencyContents[dep] = await this.fileSystemService.readFile(projectPath, dep);
+        } catch {}
+      }
+    }
+
+    const prompt = this.createFileGenerationPrompt(file, structure, completedFiles, dependencyContents);
     const response = await this.callAI(prompt);
 
     if (!response.success || !response.data) {
@@ -247,7 +257,8 @@ Focus on creating a production-ready structure with proper separation of concern
   private createFileGenerationPrompt(
     file: FileStructure,
     structure: ProjectStructure,
-    completedFiles: string[]
+    completedFiles: string[],
+    dependencyContents: Record<string, string>
   ): string {
     return `
 FILE_GENERATION: Generate the complete content for: ${file.path}
@@ -259,6 +270,11 @@ Project Context:
 
 File Dependencies: ${file.dependencies?.join(', ') || 'None'}
 Completed Files: ${completedFiles.join(', ')}
+
+CONTEXT_FILES:
+${Object.entries(dependencyContents)
+  .map(([p, c]) => `FILE: ${p}\n${c}`)
+  .join('\n\n')}
 
 Requirements:
 1. Write production-ready, type-safe code
@@ -405,7 +421,7 @@ const styles = StyleSheet.create({
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const content = await this.generateFileContent(file, structure, completedFiles);
+        const content = await this.generateFileContent(projectPath, file, structure, completedFiles);
         await this.fileSystemService.writeFile(projectPath, file.path, content);
         return;
       } catch (error) {
